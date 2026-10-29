@@ -1,83 +1,40 @@
-# Cat Clapping
+# Clapping Cat
 
-Celebrate successful builds and program runs with a clapping cat.
+Celebrate successful builds and program runs in VS Code with a clapping cat.
 
-When a supported command finishes successfully, Cat Clapping:
+Based on [Cat Clapping](https://marketplace.visualstudio.com/items?itemName=nicosmartworking.cat-clapping)
+0.0.7 by Nicola (MIT). The first commit of this repository is that release, imported as shipped.
 
-- Shows an animated cat at the top center of the editor
-- Plays a celebration sound
-- Automatically disappears after the celebration
+## What triggers the cat
 
-## Features
-
-🐱 Animated clapping cat
-
-🔊 Automatic celebration sound
-
-⚡ Detects successful builds and program runs
-
-🎯 Appears directly inside your editor
-
-## Usage
-
-Install the extension and continue working normally.
-
-When a supported build or run command exits with code 0 in the VS Code integrated terminal, the cat will appear automatically. Successful VS Code build, test and run tasks also trigger it. Run/Debug sessions trigger it when their debugger reports exit code 0.
-
-Examples:
-
-npm run build
-
-npx tsc
-
-dotnet build
-
-cargo build
-
-go build
-
-mvn package
-
-python script.py
-
-node app.js
-
-.\\program.exe
-
-./program
-
-./program.exe
-
-cargo run
-
-dotnet run
-
-npm run start
-
-The terminal trigger requires VS Code shell integration. Debug sessions require a debugger that reports the program's exit code; runs sent only to an output channel are not detected.
+A supported build or run command that exits with code 0 in the integrated terminal
+(`npm run build`, `cargo build`, `python script.py`, `./program`, ...), a successful
+build, test or run task, or a debug session whose debugger reports exit code 0.
+The terminal trigger needs VS Code shell integration.
 
 ## Settings
 
-Search for **Cat Clapping: Enabled Commands** in VS Code Settings, or edit `catClapping.enabledCommands` in user or workspace `settings.json`.
-
-The default `["*"]` keeps the current automatic detection. To celebrate only npm and Python commands, use:
+`clappingCat.enabledCommands` chooses which commands trigger the cat. The default `["*"]`
+keeps the automatic detection. To celebrate only npm and Python commands:
 
 ```json
 {
-  "catClapping.enabledCommands": ["npm", "python"]
+  "clappingCat.enabledCommands": ["npm", "python"]
 }
 ```
 
-Use `["npm"]` for npm alone or `["python"]` for Python alone. `python` also matches `py` and versioned Python commands such as `python3`; `npm` also matches `npx`. You can add a specific command such as `myapp.exe`, use `executable` for directly launched programs, `tasks` for tasks whose command cannot be identified, or `debug` for all successful debug sessions. An empty list disables the celebration. Changes take effect without restarting VS Code.
+`python` also matches `py` and `python3`; `npm` also matches `npx`. Use a specific
+command such as `myapp.exe`, `executable` for directly launched programs, `tasks` for
+tasks whose command cannot be identified, or `debug` for all successful debug sessions.
+An empty list disables the celebration.
 
-## Requirements
+## Development
 
-VS Code 1.131.0 or later.
+There is no build step: VS Code runs `src/` directly. `scripts/node` runs the Node.js
+bundled with VS Code (macOS), so no separate Node install is needed.
 
-On Linux, sound playback requires `paplay` (PulseAudio/PipeWire) or `aplay` (ALSA). The animation works without an audio player.
-
-## Release Notes
-
-### 0.0.7
-
-Clarified the `settings.json` example for choosing which commands trigger the cat.
+```sh
+scripts/node --test test/*.test.js          # run the tests
+scripts/node scripts/package.js    # build dist/clapping-cat-<version>.vsix
+code --install-extension dist/clapping-cat-0.1.0.vsix
+```

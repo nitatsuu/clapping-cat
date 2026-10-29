@@ -1,0 +1,5 @@
+#!/bin/sh
+# Runs the Node.js that ships inside VS Code, so no separate Node install is needed.
+# Usage: scripts/node --test test/*.test.js        scripts/node scripts/package.js
+CODE="${VSCODE_APP:-/Applications/Visual Studio Code.app}/Contents/MacOS/Code"
+ELECTRON_RUN_AS_NODE=1 exec "$CODE" "$@"
