@@ -98,6 +98,27 @@
 					"default": "top",
 					"markdownDescription": "Stacking order (z-axis) of the floating cat."
 				},
+				"clappingCat.image": {
+					"type": "string",
+					"default": "",
+					"markdownDescription": "Your own image instead of the cat: an animated GIF, or a PNG, WebP or JPEG. Use an absolute path, a path starting with `~`, or one relative to the workspace folder. Empty uses the built-in cat. Transparent images look best when floating."
+				},
+				"clappingCat.sound": {
+					"type": "string",
+					"default": "",
+					"markdownDescription": "Your own sound instead of the clapping. macOS plays WAV, MP3, M4A and AIFF; Windows plays WAV; Linux plays what `paplay` or `aplay` supports (WAV is safe). Path rules as for `#clappingCat.image#`. Empty uses the built-in sound."
+				},
+				"clappingCat.playSound": {
+					"type": "boolean",
+					"default": true,
+					"description": "Play a sound with the cat."
+				},
+				"clappingCat.duration": {
+					"type": "number",
+					"default": 7,
+					"minimum": 1,
+					"markdownDescription": "Seconds the cat stays visible. The built-in animation and sound last 7 seconds; a custom sound always plays to its end."
+				},
 				"clappingCat.enabledCommands": {
 					"type": "array",
 					"scope": "resource",

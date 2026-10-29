@@ -2,6 +2,9 @@
 
 const vscode = require('vscode');
 const { execFile } = require('child_process');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const {
 	isBuildCommand,
 	isRunCommand,
@@ -11,9 +14,10 @@ const {
 } = require('./commands');
 const { showEditorCat } = require('./editorCat');
 const { isFloatingSupported, showFloatingCat, closeFloatingCats } = require('./floatingCat');
+const { imageSize } = require('./imageSize');
 
 /** Length of the built-in animation and sound. */
-const CELEBRATION_SECONDS = 7;
+const DEFAULT_SECONDS = 7;
 
 const BUILT_IN_CAT = {
 	file: 'cat-clapping.gif',
@@ -105,41 +109,95 @@ function celebrate(context) {
 	if (now < celebratingUntil) {
 		return;
 	}
-	celebratingUntil = now + CELEBRATION_SECONDS * 1000;
-	showCat(context);
-	playSuccessSound(context);
-}
-
-/** @param {vscode.ExtensionContext} context */
-function showCat(context) {
 	const config = vscode.workspace.getConfiguration('clappingCat');
-	const image = vscode.Uri.joinPath(context.extensionUri, 'media', BUILT_IN_CAT.file);
-	const placement = {
-		position: config.get('position', 'bottom-right'),
-		offsetX: config.get('offsetX', 24),
-		offsetY: config.get('offsetY', 24),
-		size: config.get('size', 150),
-		seconds: CELEBRATION_SECONDS
-	};
-	if (config.get('display', 'floating') === 'floating' && isFloatingSupported()) {
-		showFloatingCat({
-			...placement,
-			image: image.fsPath,
-			crop: BUILT_IN_CAT.crop,
-			anchor: config.get('anchor', 'window'),
-			layer: config.get('layer', 'top')
-		});
-	} else {
-		showEditorCat({ ...placement, image, aspect: BUILT_IN_CAT.aspect, crop: BUILT_IN_CAT.crop });
+	const seconds = Math.max(1, config.get('duration', DEFAULT_SECONDS));
+	celebratingUntil = now + seconds * 1000;
+	showCat(context, config, seconds);
+	if (config.get('playSound', true)) {
+		playSound(customMedia(config, 'sound') ??
+			vscode.Uri.joinPath(context.extensionUri, 'media', 'cat-clapping.wav').fsPath);
 	}
 }
 
 /**
  * @param {vscode.ExtensionContext} context
- * @param {() => void} [onFinished]
+ * @param {vscode.WorkspaceConfiguration} config
+ * @param {number} seconds
  */
-function playSuccessSound(context, onFinished) {
-	const audioPath = vscode.Uri.joinPath(context.extensionUri, 'media', 'cat-clapping.wav').fsPath;
+function showCat(context, config, seconds) {
+	const cat = catImage(context, config);
+	const placement = {
+		position: config.get('position', 'bottom-right'),
+		offsetX: config.get('offsetX', 24),
+		offsetY: config.get('offsetY', 24),
+		size: config.get('size', 150),
+		seconds
+	};
+	if (config.get('display', 'floating') === 'floating' && isFloatingSupported()) {
+		showFloatingCat({
+			...placement,
+			image: cat.uri.fsPath,
+			crop: cat.crop,
+			anchor: config.get('anchor', 'window'),
+			layer: config.get('layer', 'top')
+		});
+	} else {
+		showEditorCat({ ...placement, image: cat.uri, aspect: cat.aspect, crop: cat.crop });
+	}
+}
+
+/**
+ * The image from `clappingCat.image`, or the built-in cat when that is empty or missing.
+ * @param {vscode.ExtensionContext} context
+ * @param {vscode.WorkspaceConfiguration} config
+ * @returns {{ uri: vscode.Uri, aspect: number, crop?: { x: number, y: number, width: number, height: number } }}
+ */
+function catImage(context, config) {
+	const custom = customMedia(config, 'image');
+	if (custom) {
+		const size = readImageSize(custom);
+		return { uri: vscode.Uri.file(custom), aspect: size ? size.width / size.height : 1 };
+	}
+	return {
+		uri: vscode.Uri.joinPath(context.extensionUri, 'media', BUILT_IN_CAT.file),
+		aspect: BUILT_IN_CAT.aspect,
+		crop: BUILT_IN_CAT.crop
+	};
+}
+
+/** @param {string} file */
+function readImageSize(file) {
+	const header = Buffer.alloc(64 * 1024);
+	const fd = fs.openSync(file, 'r');
+	try {
+		return imageSize(header.subarray(0, fs.readSync(fd, header, 0, header.length, 0)));
+	} finally {
+		fs.closeSync(fd);
+	}
+}
+
+/**
+ * The file a media setting points to: absolute, starting with `~`, or relative to the
+ * first workspace folder. Undefined when the setting is empty or the file is missing.
+ * @param {vscode.WorkspaceConfiguration} config
+ * @param {'image' | 'sound'} key
+ */
+function customMedia(config, key) {
+	const value = config.get(key, '').trim();
+	if (!value) {
+		return undefined;
+	}
+	const base = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? os.homedir();
+	const file = path.resolve(base, value.replace(/^~(?=$|[\\/])/, os.homedir()));
+	if (fs.existsSync(file)) {
+		return file;
+	}
+	vscode.window.showWarningMessage(`Clapping Cat: the ${key} file ${file} does not exist, using the built-in one.`);
+	return undefined;
+}
+
+/** @param {string} audioPath */
+function playSound(audioPath) {
 	if (process.platform === 'win32') {
 		const escapedPath = audioPath.replace(/'/g, "''");
 		const command = `$player = New-Object System.Media.SoundPlayer; $player.SoundLocation = '${escapedPath}'; $player.Load(); $player.PlaySync();`;
@@ -147,7 +205,6 @@ function playSuccessSound(context, onFinished) {
 			if (error) {
 				console.error('[Clapping Cat] Audio error:', error);
 			}
-			onFinished?.();
 		});
 		return;
 	}
@@ -159,15 +216,12 @@ function playSuccessSound(context, onFinished) {
 	const tryPlayer = index => {
 		if (index >= players.length) {
 			console.error('[Clapping Cat] No supported audio player found. Install paplay or aplay.');
-			onFinished?.();
 			return;
 		}
 		const [file, args] = players[index];
 		execFile(file, args, error => {
 			if (error) {
 				tryPlayer(index + 1);
-			} else {
-				onFinished?.();
 			}
 		});
 	};

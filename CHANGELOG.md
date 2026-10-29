@@ -17,3 +17,6 @@
   spilling out of place and sometimes scrolling the editor.
 - One cat at a time: successes that finish while the cat is still clapping are ignored.
 - The sound plays even when there is no text editor open.
+- Use your own image and sound with `clappingCat.image` and `clappingCat.sound`, turn the
+  sound off with `clappingCat.playSound`, and set how long the cat stays with
+  `clappingCat.duration`.

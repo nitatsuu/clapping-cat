@@ -40,6 +40,29 @@ In `editor` mode VS Code limits what an extension can draw: the cat stays inside
 text editor, top and bottom follow the visible lines, and left, center and right are
 measured across the width of the code rather than the whole editor.
 
+## Your own image and sound
+
+| Setting | Default | |
+|---|---|---|
+| `clappingCat.image` | built-in cat | An animated GIF, or a PNG, WebP or JPEG |
+| `clappingCat.sound` | built-in clapping | macOS: WAV, MP3, M4A, AIFF. Windows: WAV. Linux: what `paplay`/`aplay` play (WAV) |
+| `clappingCat.playSound` | `true` | Turn the sound off |
+| `clappingCat.duration` | `7` | Seconds the image stays up; a custom sound plays to its end |
+
+Paths can be absolute, start with `~`, or be relative to the workspace folder, so a team
+can keep its own cat in the repository.
+
+```json
+{
+  "clappingCat.image": "~/Pictures/party-parrot.gif",
+  "clappingCat.sound": "/System/Library/Sounds/Glass.aiff",
+  "clappingCat.duration": 3
+}
+```
+
+Images with a transparent background look best floating. Videos are not supported;
+convert a short clip to an animated GIF first.
+
 ## Choosing what triggers the cat
 
 `clappingCat.enabledCommands` chooses which commands trigger the cat. The default `["*"]`
