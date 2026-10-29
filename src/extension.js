@@ -14,9 +14,6 @@ let lastShown = 0;
 
 /** @param {vscode.ExtensionContext} context */
 function activate(context) {
-	vscode.window.showInformationMessage('Cat Clapping extension activated!');
-	console.log('Cat Clapping activated');
-
 	const endListener = vscode.window.onDidEndTerminalShellExecution(event => {
 		const command = event.execution.commandLine.value;
 		if (event.exitCode === 0 &&
