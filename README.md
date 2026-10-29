@@ -12,7 +12,35 @@ A supported build or run command that exits with code 0 in the integrated termin
 build, test or run task, or a debug session whose debugger reports exit code 0.
 The terminal trigger needs VS Code shell integration.
 
-## Settings
+## Where the cat appears
+
+On macOS the cat floats in its own transparent, click-through window above VS Code, so
+it stays visible over a big or maximized terminal. Run **Clapping Cat: Show Cat** from the
+Command Palette to preview your settings.
+
+| Setting | Default | |
+|---|---|---|
+| `clappingCat.display` | `floating` | `floating` (macOS) or `editor` (inside the text editor, like the original; other systems always use this) |
+| `clappingCat.position` | `bottom-right` | `top-left`, `top-center`, `top-right`, `center`, `bottom-left`, `bottom-center`, `bottom-right` |
+| `clappingCat.anchor` | `window` | Position relative to the front VS Code `window` or to its `screen` |
+| `clappingCat.offsetX`, `clappingCat.offsetY` | `24` | Pixels from the chosen edges; on a centered axis they shift the cat |
+| `clappingCat.size` | `150` | Height of the cat in pixels |
+| `clappingCat.layer` | `top` | Stacking order: `top` stays above every window, even full-screen ones; `normal` can be covered by other windows once you click them |
+
+```json
+{
+  "clappingCat.position": "top-right",
+  "clappingCat.anchor": "screen",
+  "clappingCat.offsetY": 40,
+  "clappingCat.size": 220
+}
+```
+
+In `editor` mode VS Code limits what an extension can draw: the cat stays inside the
+text editor, top and bottom follow the visible lines, and left, center and right are
+measured across the width of the code rather than the whole editor.
+
+## Choosing what triggers the cat
 
 `clappingCat.enabledCommands` chooses which commands trigger the cat. The default `["*"]`
 keeps the automatic detection. To celebrate only npm and Python commands:

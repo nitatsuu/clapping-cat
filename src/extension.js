@@ -9,11 +9,25 @@ const {
 	isDebugSessionEnabled,
 	isSuccessfulDebugExit
 } = require('./commands');
+const { showEditorCat } = require('./editorCat');
+const { isFloatingSupported, showFloatingCat, closeFloatingCats } = require('./floatingCat');
 
-let lastShown = 0;
+/** Length of the built-in animation and sound. */
+const CELEBRATION_SECONDS = 7;
+
+const BUILT_IN_CAT = {
+	file: 'cat-clapping.gif',
+	aspect: 576 / 1024,
+	// The visible cat inside the GIF's transparent padding, measured over all frames.
+	crop: { x: 0.07, y: 0.24, width: 0.67, height: 0.6 }
+};
+
+let celebratingUntil = 0;
 
 /** @param {vscode.ExtensionContext} context */
 function activate(context) {
+	const showCommand = vscode.commands.registerCommand('clappingCat.show', () => celebrate(context));
+
 	const endListener = vscode.window.onDidEndTerminalShellExecution(event => {
 		const command = event.execution.commandLine.value;
 		if (event.exitCode === 0 &&
@@ -44,7 +58,7 @@ function activate(context) {
 		})
 	});
 
-	context.subscriptions.push(endListener, taskListener, debugTracker);
+	context.subscriptions.push(showCommand, endListener, taskListener, debugTracker, { dispose: closeFloatingCats });
 }
 
 /**
@@ -86,48 +100,38 @@ function isCelebrationTask(task, enabled) {
 
 /** @param {vscode.ExtensionContext} context */
 function celebrate(context) {
-	if (showCatAtEditorTop(context)) {
-		playSuccessSound(context);
+	// One cat at a time: ignore successes that finish while the cat is still clapping.
+	const now = Date.now();
+	if (now < celebratingUntil) {
+		return;
 	}
+	celebratingUntil = now + CELEBRATION_SECONDS * 1000;
+	showCat(context);
+	playSuccessSound(context);
 }
 
 /** @param {vscode.ExtensionContext} context */
-function showCatAtEditorTop(context) {
-	const now = Date.now();
-	if (now - lastShown < 1500) {
-		return false;
-	}
-	const editor = vscode.window.activeTextEditor;
-	if (!editor) {
-		return false;
-	}
-	lastShown = now;
-	const gifPath = vscode.Uri.joinPath(context.extensionUri, 'media', 'cat-clapping.gif');
-	const decorationType = vscode.window.createTextEditorDecorationType({
-		before: {
-			contentIconPath: gifPath,
-			textDecoration: 'none; position: absolute; top: 8px; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 10;',
-			width: '60px',
-			height: '60px'
-		},
-		rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
-	});
-	const placeAtTop = () => {
-		const line = editor.visibleRanges[0]?.start.line ?? 0;
-		const position = new vscode.Position(line, 0);
-		editor.setDecorations(decorationType, [new vscode.Range(position, position)]);
+function showCat(context) {
+	const config = vscode.workspace.getConfiguration('clappingCat');
+	const image = vscode.Uri.joinPath(context.extensionUri, 'media', BUILT_IN_CAT.file);
+	const placement = {
+		position: config.get('position', 'bottom-right'),
+		offsetX: config.get('offsetX', 24),
+		offsetY: config.get('offsetY', 24),
+		size: config.get('size', 150),
+		seconds: CELEBRATION_SECONDS
 	};
-	placeAtTop();
-	const scrollListener = vscode.window.onDidChangeTextEditorVisibleRanges(event => {
-		if (event.textEditor === editor) {
-			placeAtTop();
-		}
-	});
-	setTimeout(() => {
-		scrollListener.dispose();
-		decorationType.dispose();
-	}, 7000);
-	return true;
+	if (config.get('display', 'floating') === 'floating' && isFloatingSupported()) {
+		showFloatingCat({
+			...placement,
+			image: image.fsPath,
+			crop: BUILT_IN_CAT.crop,
+			anchor: config.get('anchor', 'window'),
+			layer: config.get('layer', 'top')
+		});
+	} else {
+		showEditorCat({ ...placement, image, aspect: BUILT_IN_CAT.aspect, crop: BUILT_IN_CAT.crop });
+	}
 }
 
 /**

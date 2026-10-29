@@ -15,10 +15,89 @@
 	"categories": [
 		"Other"
 	],
+	"extensionKind": [
+		"ui"
+	],
 	"contributes": {
+		"commands": [
+			{
+				"command": "clappingCat.show",
+				"title": "Show Cat",
+				"category": "Clapping Cat"
+			}
+		],
 		"configuration": {
 			"title": "Clapping Cat",
 			"properties": {
+				"clappingCat.display": {
+					"type": "string",
+					"enum": [
+						"floating",
+						"editor"
+					],
+					"enumDescriptions": [
+						"A transparent window above VS Code, so the cat is visible over the terminal and every other panel. macOS only; other systems use `editor`.",
+						"Inside the active text editor, like the original extension. Hidden when the editor is covered, for example by a maximized terminal."
+					],
+					"default": "floating",
+					"markdownDescription": "Where the cat appears. Run **Clapping Cat: Show Cat** to preview your settings."
+				},
+				"clappingCat.position": {
+					"type": "string",
+					"enum": [
+						"top-left",
+						"top-center",
+						"top-right",
+						"center",
+						"bottom-left",
+						"bottom-center",
+						"bottom-right"
+					],
+					"default": "bottom-right",
+					"markdownDescription": "Where the cat sits within the area chosen by `#clappingCat.anchor#` (or within the text editor when `#clappingCat.display#` is `editor`)."
+				},
+				"clappingCat.anchor": {
+					"type": "string",
+					"enum": [
+						"window",
+						"screen"
+					],
+					"enumDescriptions": [
+						"Position the cat relative to the front VS Code window.",
+						"Position the cat relative to the screen VS Code is on."
+					],
+					"default": "window",
+					"markdownDescription": "What `#clappingCat.position#` is relative to. Applies to the floating cat."
+				},
+				"clappingCat.offsetX": {
+					"type": "number",
+					"default": 24,
+					"markdownDescription": "Horizontal distance in pixels from the left or right edge. For centered positions, moves the cat right (negative values move it left)."
+				},
+				"clappingCat.offsetY": {
+					"type": "number",
+					"default": 24,
+					"markdownDescription": "Vertical distance in pixels from the top or bottom edge. For centered positions, moves the cat down (negative values move it up)."
+				},
+				"clappingCat.size": {
+					"type": "number",
+					"default": 150,
+					"minimum": 16,
+					"markdownDescription": "Height of the cat in pixels. The width follows the image's proportions."
+				},
+				"clappingCat.layer": {
+					"type": "string",
+					"enum": [
+						"top",
+						"normal"
+					],
+					"enumDescriptions": [
+						"Above all windows, including full-screen apps, until the celebration ends.",
+						"A regular window: it appears in front, and other windows can cover it once you click them."
+					],
+					"default": "top",
+					"markdownDescription": "Stacking order (z-axis) of the floating cat."
+				},
 				"clappingCat.enabledCommands": {
 					"type": "array",
 					"scope": "resource",
